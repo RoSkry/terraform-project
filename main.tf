@@ -1,6 +1,6 @@
 terraform {
   required_version = ">= 1.0"
-  backend "local" {}
+  backend "s3" {}
 }
 
 provider "aws" {

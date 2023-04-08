@@ -1,0 +1,3 @@
+bucket = "terraform-task-5544-2773-2532"
+key    = "terraform-state/eMASE/dev/terraform.tfstate"
+region = "eu-west-1"
