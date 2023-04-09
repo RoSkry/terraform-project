@@ -22,3 +22,24 @@ module "vpc" {
   single_nat_gateway = true
   enable_ipv6        = false
 }
+
+resource "aws_security_group" "lb_public_access" {
+  name   = "lb-public-access"
+  vpc_id = module.vpc.vpc_id
+
+  ingress {
+    from_port = 80
+    to_port   = 80
+    protocol  = "tcp"
+    cidr_blocks = [
+      "0.0.0.0/0"
+    ]
+  }
+
+  egress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = module.vpc.private_subnets_cidr_blocks
+  }
+}
