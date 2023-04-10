@@ -24,8 +24,8 @@ module "vpc" {
 }
 
 resource "aws_security_group" "lb_public_access" {
-  name   = "lb-public-access"
-  vpc_id = module.vpc.vpc_id
+  name        = "lb-public-access"
+  vpc_id      = module.vpc.vpc_id
   description = "Security group for Load Balancer"
 
   ingress {
@@ -46,8 +46,8 @@ resource "aws_security_group" "lb_public_access" {
 }
 
 resource "aws_security_group" "ec2_lb_access" {
-  name   = "ec2-lb-access"
-  vpc_id = module.vpc.vpc_id
+  name        = "ec2-lb-access"
+  vpc_id      = module.vpc.vpc_id
   description = "Security group for EC2 instances"
 
   ingress {
@@ -89,5 +89,52 @@ resource "aws_instance" "app" {
 
   tags = {
     "Name" = "app-${count.index}"
+  }
+}
+
+resource "aws_lb" "app" {
+  name               = "app"
+  internal           = false
+  load_balancer_type = "application"
+  enable_http2       = true
+  ip_address_type    = "ipv4"
+  security_groups = [
+    aws_security_group.lb_public_access.id
+  ]
+  subnets = module.vpc.public_subnets
+}
+
+resource "aws_lb_target_group" "app" {
+  name     = "app"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = module.vpc.vpc_id
+
+  health_check {
+    healthy_threshold   = 3
+    unhealthy_threshold = 10
+    timeout             = 5
+    interval            = 10
+    path                = "/"
+    port                = "80"
+  }
+}
+
+
+resource "aws_lb_target_group_attachment" "app" {
+  count            = length(aws_instance.app)
+  target_group_arn = aws_lb_target_group.app.arn
+  target_id        = aws_instance.app[count.index].id
+}
+
+
+resource "aws_lb_listener" "app-http" {
+  load_balancer_arn = aws_lb.app.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.app.arn
   }
 }
