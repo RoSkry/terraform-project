@@ -68,3 +68,26 @@ resource "aws_security_group" "ec2_lb_access" {
     ]
   }
 }
+
+resource "aws_instance" "app" {
+  count         = 2
+  ami           = var.ami_id
+  instance_type = "t3.micro"
+  subnet_id     = module.vpc.private_subnets[count.index % length(module.vpc.private_subnets)]
+
+  vpc_security_group_ids = [
+    aws_security_group.ec2_lb_access.id
+  ]
+  associate_public_ip_address = false
+
+  user_data = <<-EOF
+    #!/bin/sh
+    apt-get update
+    apt-get install -y nginx-light
+    echo 'Hello from instance app-${count.index}' > /var/www/html/index.html
+  EOF
+
+  tags = {
+    "Name" = "app-${count.index}"
+  }
+}
