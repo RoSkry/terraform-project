@@ -90,6 +90,10 @@ resource "aws_instance" "app" {
   tags = {
     "Name" = "app-${count.index}"
   }
+
+  depends_on = [
+    module.vpc.natgw_ids
+  ]
 }
 
 resource "aws_lb" "app" {
